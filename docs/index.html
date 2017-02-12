@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>TinySMF</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h1 id="tinysmf">TinySMF</h1>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>TinySMF is a library for reading and writing simple MIDI files. Its only
+dependency is on <a href="#">MetaView</a>, a similarly tiny convenience library for
+reading and writing to JavaScript DataViews.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="hljs-comment">/*
+Copyright (c) 2017 Jahn Johansen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/</span>
+
+<span class="hljs-keyword">var</span> TinySMF = (<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>We define some useful English names for MIDI values here.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> TinySMF = {};
+
+	TinySMF.HeaderChunk = <span class="hljs-string">"MThd"</span>;
+	TinySMF.TrackChunk = <span class="hljs-string">"MTrk"</span>;
+
+	TinySMF.SingleTrackFormat = <span class="hljs-number">0</span>;
+	TinySMF.MultiTrackFormat = <span class="hljs-number">1</span>;
+	TinySMF.MultiSongFormat = <span class="hljs-number">2</span>;
+
+	TinySMF.TicksPerQuarterNote = <span class="hljs-number">0</span>;
+	TinySMF.SMTPEFramesPerSecond = <span class="hljs-number">1</span>;
+
+	TinySMF.CHANNEL = <span class="hljs-number">0x80</span>;
+	TinySMF.META = <span class="hljs-number">0xFF</span>;
+	TinySMF.SYSEX = <span class="hljs-number">0xF0</span>;
+	TinySMF.SYSEX_CONT = <span class="hljs-number">0xF7</span>;
+
+	TinySMF.Channel = {
+		<span class="hljs-attr">NoteOff</span>: <span class="hljs-number">0x8</span>,
+		<span class="hljs-attr">NoteOn</span>: <span class="hljs-number">0x9</span>,
+		<span class="hljs-attr">PolyphonicPressure</span>: <span class="hljs-number">0xA</span>,
+		<span class="hljs-attr">Controller</span>: <span class="hljs-number">0xB</span>,
+		<span class="hljs-attr">ProgramChange</span>: <span class="hljs-number">0xC</span>,
+		<span class="hljs-attr">ChannelPressure</span>: <span class="hljs-number">0xD</span>,
+		<span class="hljs-attr">PitchBend</span>: <span class="hljs-number">0xE</span>
+	};
+
+	TinySMF.Meta = {
+		<span class="hljs-attr">Text</span>: <span class="hljs-number">0x01</span>,
+		<span class="hljs-attr">Copyright</span>: <span class="hljs-number">0x02</span>,
+		<span class="hljs-attr">TrackName</span>: <span class="hljs-number">0x03</span>,
+		<span class="hljs-attr">InstrumentName</span>: <span class="hljs-number">0x04</span>,
+		<span class="hljs-attr">Lyric</span>: <span class="hljs-number">0x05</span>,
+		<span class="hljs-attr">EndOfTrack</span>: <span class="hljs-number">0x2F</span>,
+		<span class="hljs-attr">Tempo</span>: <span class="hljs-number">0x51</span>,
+		<span class="hljs-attr">TimeSignature</span>: <span class="hljs-number">0x58</span>,
+		<span class="hljs-attr">KeySignature</span>: <span class="hljs-number">0x59</span>
+	}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <h2 id="toascii-bytes-">toASCII (bytes)</h2>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Used internally, private. Converts array of <code>bytes</code> into an ASCII string.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">toASCII</span> (<span class="hljs-params">bytes</span>) </span>{
+		<span class="hljs-keyword">var</span> ascii = <span class="hljs-string">""</span>, i = <span class="hljs-number">0</span>;
+		<span class="hljs-keyword">while</span> (i &lt; bytes.length)
+			ascii += <span class="hljs-built_in">String</span>.fromCharCode(bytes[i ++]);
+		<span class="hljs-keyword">return</span> ascii;
+	}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <h2 id="fromascii-string-">fromASCII (string)</h2>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>Used internally, private. Converts <code>string</code> into an array of bytes.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">fromASCII</span> (<span class="hljs-params">string</span>) </span>{
+		<span class="hljs-keyword">var</span> bytes = [], i = <span class="hljs-number">0</span>;
+		<span class="hljs-keyword">while</span> (bytes.length &lt; string.length)
+			bytes.push(string.charCodeAt(i ++));
+		<span class="hljs-keyword">return</span> bytes;
+	}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <h2 id="vlq">VLQ</h2>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Used internally, private. Reads and writes variable-length quantities.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> VLQ = {
+		<span class="hljs-attr">buffer</span>: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>(<span class="hljs-number">8</span>),</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h3 id="vlq-read-input-">VLQ.read (input)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Reads a variable-length quantity from MetaView instance <code>input</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		read: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">input</span>) </span>{
+			<span class="hljs-keyword">var</span> c = input.readUint8(<span class="hljs-number">1</span>), q = c &amp; <span class="hljs-number">0x7F</span>;
+
+			<span class="hljs-keyword">while</span> (c &amp; <span class="hljs-number">0x80</span>) {
+				c = input.readUint8(<span class="hljs-number">1</span>);
+				q = (q &lt;&lt; <span class="hljs-number">7</span>) | (c &amp; <span class="hljs-number">0x7F</span>);
+			}
+
+			<span class="hljs-keyword">return</span> q;
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <h3 id="vlq-write-output-value-">VLQ.write (output, value)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Writes <code>value</code> as a variable-length quantity to MetaView instance <code>output</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		write: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">output, value</span>) </span>{
+			<span class="hljs-keyword">var</span> c = value &amp; <span class="hljs-number">0x7F</span>, i = <span class="hljs-number">0</span>;
+			value &gt;&gt;= <span class="hljs-number">7</span>;
+			<span class="hljs-keyword">this</span>.buffer[i ++] = c;
+
+			<span class="hljs-keyword">while</span> (value &gt; <span class="hljs-number">0</span>) {
+				c = <span class="hljs-number">0x80</span> | (value &amp; <span class="hljs-number">0x7F</span>);
+				value &gt;&gt;= <span class="hljs-number">7</span>;
+				<span class="hljs-keyword">this</span>.buffer[i ++] = c;
+			}
+
+			<span class="hljs-keyword">while</span> (i &gt; <span class="hljs-number">0</span>)
+				output.writeUint8(<span class="hljs-keyword">this</span>.buffer[--i]);
+		}
+	}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <h2 id="midiheader-">MIDIHeader ()</h2>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>MIDI header chunk abstraction class. Stores all the MIDI header chunk information
+for later manipulation, reading, and writing.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">MIDIHeader</span> (<span class="hljs-params"></span>) </span>{
+		<span class="hljs-keyword">this</span>.identifier = TinySMF.HeaderChunk;
+		<span class="hljs-keyword">this</span>.length = <span class="hljs-number">6</span>;
+		<span class="hljs-keyword">this</span>.format = <span class="hljs-number">1</span>;
+		<span class="hljs-keyword">this</span>.tracks = <span class="hljs-number">1</span>;
+		<span class="hljs-keyword">this</span>.timeMode = TinySMF.TicksPerQuarterNote;
+		<span class="hljs-keyword">this</span>.ticks = <span class="hljs-number">0x60</span>;
+	}
+
+	MIDIHeader.prototype = {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <h3 id="midiheader-read-input-">MIDIHeader.read (input)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Reads data from MetaView instance <code>input</code> into this MIDIHeader instance.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		read: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">input</span>) </span>{
+			<span class="hljs-keyword">this</span>.identifier = toASCII(input.readUint8(<span class="hljs-number">4</span>));
+			<span class="hljs-keyword">this</span>.length = input.readUint32(<span class="hljs-number">1</span>);
+			<span class="hljs-keyword">this</span>.format = input.readUint16(<span class="hljs-number">1</span>);
+			<span class="hljs-keyword">this</span>.tracks = input.readUint16(<span class="hljs-number">1</span>);
+
+			<span class="hljs-keyword">var</span> division = input.readUint16(<span class="hljs-number">1</span>);
+
+			<span class="hljs-keyword">if</span> (!(division &amp; <span class="hljs-number">0x8000</span>)) {
+				<span class="hljs-keyword">this</span>.timeMode = TinySMF.TicksPerQuarterNote;
+				<span class="hljs-keyword">this</span>.ticks = division &amp; <span class="hljs-number">0x7FFF</span>;
+			} <span class="hljs-keyword">else</span> {
+				<span class="hljs-keyword">this</span>.timeMode = TinySMF.SMTPEFramesPerSecond;
+				<span class="hljs-keyword">this</span>.ticks = division &amp; <span class="hljs-number">0xFF</span>;
+				<span class="hljs-keyword">this</span>.smtpe = <span class="hljs-number">0xFF</span> - ((division &amp; <span class="hljs-number">0xFF00</span>) &gt;&gt; <span class="hljs-number">8</span>) + <span class="hljs-number">1</span>;
+			}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>We’re required to honor &gt;6 byte headers
+so we skip the excess. ;)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			input.cursor += <span class="hljs-keyword">this</span>.length - <span class="hljs-number">6</span>;
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <h3 id="midiheader-write-output-">MIDIHeader.write (output)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>Writes data from this MIDIHeader instance to MetaView instance <code>output</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		write: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">output</span>) </span>{
+			output.writeUint8(fromASCII(<span class="hljs-keyword">this</span>.identifier));
+			output.writeUint32(<span class="hljs-keyword">this</span>.length);
+			output.writeUint16(<span class="hljs-keyword">this</span>.format);
+			output.writeUint16(<span class="hljs-keyword">this</span>.tracks);
+
+			<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.timeMode == TinySMF.TicksPerQuarterNote) {
+				output.writeUint16(<span class="hljs-keyword">this</span>.ticks);
+			} <span class="hljs-keyword">else</span> {
+				output.writeUint16((<span class="hljs-keyword">this</span>.smtpe &lt;&lt; <span class="hljs-number">8</span>) | (<span class="hljs-keyword">this</span>.ticks &amp; <span class="hljs-number">0xFF</span>));
+			}
+		}
+	}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <h2 id="miditrack-">MIDITrack ()</h2>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>MIDI track chunk abstraction class. Stores all the MIDI track chunk information
+for later manipulation, reading, and writing.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">MIDITrack</span> (<span class="hljs-params"></span>) </span>{
+		<span class="hljs-keyword">this</span>.identifier = TinySMF.TrackChunk;
+		<span class="hljs-keyword">this</span>.length = <span class="hljs-number">0</span>;
+		<span class="hljs-keyword">this</span>.messages = [];
+	}
+
+	MIDITrack.prototype = {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <h3 id="miditrack-read-input-">MIDITrack.read (input)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>Reads data from MetaView instance <code>input</code> into this MIDITrack instance.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		read: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">input</span>) </span>{
+			<span class="hljs-keyword">this</span>.identifier = toASCII(input.readUint8(<span class="hljs-number">4</span>));
+			<span class="hljs-keyword">this</span>.length = input.readUint32();
+
+			<span class="hljs-keyword">var</span> start = input.cursor, message;
+
+			<span class="hljs-keyword">this</span>.runningStatus = <span class="hljs-number">0</span>;
+
+			<span class="hljs-keyword">while</span> (input.cursor - start &lt; <span class="hljs-keyword">this</span>.length) {
+				message = <span class="hljs-keyword">new</span> MIDIMessage(<span class="hljs-keyword">this</span>);
+				message.read(input);
+				<span class="hljs-keyword">this</span>.messages.push(message);
+			}
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <h3 id="miditrack-write-output-">MIDITrack.write (output)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>Writes data from this MIDITrack instance to MetaView instance <code>output</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		write: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">output</span>) </span>{
+			output.writeUint8(fromASCII(<span class="hljs-keyword">this</span>.identifier));
+
+			<span class="hljs-keyword">var</span> sizepos = output.cursor, size;
+			output.writeUint32(<span class="hljs-number">0</span>);
+			size = output.cursor;
+
+			<span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-keyword">this</span>.messages.length; i ++)
+				<span class="hljs-keyword">this</span>.messages[i].write(output);
+
+			size = output.cursor - size;
+			output.cursor = sizepos;
+			output.writeUint32(size);
+			output.cursor += size;
+		}
+	}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <h2 id="midimessage-track-time-type-subtype-data-">MIDIMessage (track, time, type, subtype, data)</h2>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>MIDI message abstraction class.</p>
+<p><code>MIDIMessage.track</code> is the track that contains this event.</p>
+<p><code>MIDIMessage.time</code> is the time (relative to the previous event) this message
+is to be interpreted.</p>
+<p><code>MIDIMessage.type</code> is the message type, one of <code>TinySMF.META</code>, <code>TinySMF.SYSEX</code>,
+<code>TinySMF.SYSEX_CONT</code>, or <code>TinySMF.CHANNEL</code>.</p>
+<p><code>MIDIMessage.subtype</code> describes the precise type of event, e.g.
+<code>TinySMF.Meta.TrackName</code> or <code>TinySMF.Channel.NoteOn</code></p>
+<p><code>MIDIMessage.data</code> is an array, its elements vary depending on the needs of
+the message subtype. For example, <code>TinySMF.Channel.NoteOn</code> data contains 2
+bytes representing the pitch of the note, and its velocity.</p>
+<p>I’d recommend reading up on the different
+<a href="http://www.somascape.org/midi/tech/mfile.html">types of messages</a> and their
+corresponding data bytes.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">MIDIMessage</span> (<span class="hljs-params">track, time, type, subtype, data</span>) </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>Stores an internal reference to the parent track.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="hljs-keyword">this</span>.track = track;
+		<span class="hljs-keyword">this</span>.time = time || <span class="hljs-number">0</span>;
+		<span class="hljs-keyword">this</span>.type = type || <span class="hljs-number">0xF0</span>;
+		<span class="hljs-keyword">this</span>.subtype = subtype || <span class="hljs-number">0</span>;
+		<span class="hljs-keyword">this</span>.data = data || [<span class="hljs-number">0xF7</span>];
+	}
+
+	MIDIMessage.prototype = {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <h3 id="midimessage-read-input-">MIDIMessage.read (input)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>Reads data from MetaView instance <code>input</code> into this MIDIMessage.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		read: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">input</span>) </span>{
+			<span class="hljs-keyword">this</span>.time = VLQ.read(input);
+			<span class="hljs-keyword">this</span>.status = input.readUint8();
+
+			<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.status &gt;&gt; <span class="hljs-number">4</span> == <span class="hljs-number">0xF</span>) {
+				<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.status == TinySMF.META) {
+					<span class="hljs-keyword">this</span>.type = TinySMF.META;
+					<span class="hljs-keyword">this</span>.subtype = input.readUint8();
+					<span class="hljs-keyword">this</span>.length = VLQ.read(input);
+					<span class="hljs-keyword">this</span>.data = <span class="hljs-keyword">this</span>.length ? input.readUint8(<span class="hljs-keyword">this</span>.length) : [];
+				} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.status == TinySMF.SYSEX) {
+					<span class="hljs-keyword">this</span>.type = TinySMF.SYSEX;
+					<span class="hljs-keyword">this</span>.length = VLQ.read(input);
+					<span class="hljs-keyword">this</span>.data = <span class="hljs-keyword">this</span>.length ? input.readUint8(<span class="hljs-keyword">this</span>.length) : [];
+				} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.status == TinySMF.SYSEX_CONT) {
+					<span class="hljs-keyword">this</span>.type = TinySMF.SYSEX_CONT;
+					<span class="hljs-keyword">this</span>.length = VLQ.read(input);
+					<span class="hljs-keyword">this</span>.data = <span class="hljs-keyword">this</span>.length ? input.readUint8(<span class="hljs-keyword">this</span>.length) : [];
+				}
+			} <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>Running status. Some MIDI files still use it, so we take it into
+consideration.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">if</span> (!(<span class="hljs-keyword">this</span>.status &amp; <span class="hljs-number">0x80</span>)) {
+					<span class="hljs-keyword">this</span>.status = <span class="hljs-keyword">this</span>.track.runningStatus;
+					input.cursor --;
+				} <span class="hljs-keyword">else</span> {
+					<span class="hljs-keyword">this</span>.track.runningStatus = <span class="hljs-keyword">this</span>.status;
+				}
+
+				<span class="hljs-keyword">this</span>.type = TinySMF.CHANNEL;
+				<span class="hljs-keyword">this</span>.subtype = (<span class="hljs-keyword">this</span>.status &amp; <span class="hljs-number">0xF0</span>) &gt;&gt; <span class="hljs-number">4</span>;
+				<span class="hljs-keyword">this</span>.channel = <span class="hljs-keyword">this</span>.status &amp; <span class="hljs-number">0x0F</span>;
+				<span class="hljs-keyword">this</span>.data = [];
+
+				<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.subtype &gt;= <span class="hljs-number">0x8</span> &amp;&amp; <span class="hljs-keyword">this</span>.subtype &lt;= <span class="hljs-number">0xB</span>) {
+					<span class="hljs-keyword">this</span>.data[<span class="hljs-number">0</span>] = input.readUint8();
+					<span class="hljs-keyword">this</span>.data[<span class="hljs-number">1</span>] = input.readUint8();
+				} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.subtype == <span class="hljs-number">0xC</span> || <span class="hljs-keyword">this</span>.subtype == <span class="hljs-number">0xD</span>) {
+					<span class="hljs-keyword">this</span>.data[<span class="hljs-number">0</span>] = input.readUint8();
+				} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.subtype == <span class="hljs-number">0xE</span>) {
+					<span class="hljs-keyword">this</span>.data[<span class="hljs-number">0</span>] = input.readUint8() | (input.readUint8() &lt;&lt; <span class="hljs-number">7</span>);
+				}
+			}
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <h3 id="midimessage-write-output-">MIDIMessage.write (output)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>Writes this MIDIMessage to MetaView instance <code>output</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		write: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">output</span>) </span>{
+			VLQ.write(output, <span class="hljs-keyword">this</span>.time);
+
+			<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.type == TinySMF.META) {
+				output.writeUint8(<span class="hljs-number">0xFF</span>);
+				output.writeUint8(<span class="hljs-keyword">this</span>.subtype);
+				VLQ.write(output, <span class="hljs-keyword">this</span>.data.length);
+				<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.data.length)
+					output.writeUint8(<span class="hljs-keyword">this</span>.data);
+			} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.type == TinySMF.SYSEX ||
+								 <span class="hljs-keyword">this</span>.type == TinySMF.SYSEX_CONT) {
+				output.writeUint8(<span class="hljs-keyword">this</span>.status);
+				VLQ.write(output, <span class="hljs-keyword">this</span>.data.length);
+				<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.data.length)
+					output.writeUint8(<span class="hljs-keyword">this</span>.data);
+			} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.type == TinySMF.CHANNEL){
+				output.writeUint8((<span class="hljs-keyword">this</span>.subtype &lt;&lt; <span class="hljs-number">4</span>) | <span class="hljs-keyword">this</span>.channel);
+				<span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.subtype &gt;= <span class="hljs-number">0x8</span> &amp;&amp; <span class="hljs-keyword">this</span>.subtype &lt;= <span class="hljs-number">0xB</span>) {
+					output.writeUint8(<span class="hljs-keyword">this</span>.data[<span class="hljs-number">0</span>]);
+					output.writeUint8(<span class="hljs-keyword">this</span>.data[<span class="hljs-number">1</span>]);
+				} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.subtype &gt;= <span class="hljs-number">0xC</span> &amp;&amp; <span class="hljs-keyword">this</span>.subtype &lt;= <span class="hljs-number">0xD</span>) {
+					output.writeUint8(<span class="hljs-keyword">this</span>.data[<span class="hljs-number">0</span>]);
+				} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.subtype == <span class="hljs-number">0xE</span>) {
+					output.writeUint8(<span class="hljs-keyword">this</span>.data[<span class="hljs-number">0</span>] &amp; <span class="hljs-number">0x7F</span>);
+					output.writeUint8((<span class="hljs-keyword">this</span>.data[<span class="hljs-number">0</span>] &gt;&gt; <span class="hljs-number">7</span>) &amp; <span class="hljs-number">0x7F</span>);
+				}
+			}
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <h3 id="midimessage-readdataasascii-">MIDIMessage.readDataAsASCII ()</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>Returns <code>data</code> represented as an ASCII string.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		readDataAsASCII: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.data ? toASCII(<span class="hljs-keyword">this</span>.data) : <span class="hljs-literal">null</span>;
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <h3 id="midimessage-writedatafromascii-string-">MIDIMessage.writeDataFromASCII (string)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <p>Sets <code>data</code> to <code>string</code> as ASCII bytes.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		writeDataFromASCII: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">string</span>) </span>{
+			<span class="hljs-keyword">this</span>.data = fromASCII(string);
+		}
+	}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <h2 id="midifile-">MIDIFile ()</h2>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <p>Ties together all of the above abstractions, contains a header and a collection
+of tracks.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">MIDIFile</span> (<span class="hljs-params"></span>) </span>{
+		<span class="hljs-keyword">this</span>.header = <span class="hljs-literal">null</span>;
+		<span class="hljs-keyword">this</span>.tracks = [];
+	}
+
+	MIDIFile.prototype = {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <h3 id="midifile-read-input-">MIDIFile.read (input)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>Reads an entire file at once from MetaView instance <code>input</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		read: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">input</span>) </span>{
+			<span class="hljs-keyword">var</span> chunkID, chunk;
+
+			<span class="hljs-keyword">this</span>.header = <span class="hljs-keyword">new</span> MIDIHeader();
+			<span class="hljs-keyword">this</span>.header.read(input);
+
+			<span class="hljs-keyword">while</span> (<span class="hljs-keyword">this</span>.tracks.length != <span class="hljs-keyword">this</span>.header.tracks) {
+				chunkID = toASCII(input.peekUint8(<span class="hljs-number">4</span>));
+
+				<span class="hljs-keyword">if</span> (chunkID == TinySMF.TrackChunk) {
+					chunk = <span class="hljs-keyword">new</span> TinySMF.MIDITrack();
+					chunk.read(input);
+					<span class="hljs-keyword">this</span>.tracks.push(chunk);
+				} <span class="hljs-keyword">else</span> {
+					input.readUint8(<span class="hljs-number">4</span>);
+					input.cursor += input.readUint32();
+				}
+			}
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
+              </div>
+              <h3 id="midifile-write-output-">MIDIFile.write (output)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <p>Writes the <code>MIDIHeader</code> and all <code>MIDITrack</code>s at once to MetaView instance
+<code>output</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		write: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">output</span>) </span>{
+			<span class="hljs-keyword">this</span>.writeHeader(output);
+
+			<span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-keyword">this</span>.tracks.length; i ++)
+				<span class="hljs-keyword">this</span>.writeTrack(output, i);
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-45">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-45">&#182;</a>
+              </div>
+              <h3 id="miditrack-writeheader-output-">MIDITrack.writeHeader (output)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
+              </div>
+              <p>Only writes the contained <code>MIDIHeader</code> instance to MetaView instance
+<code>output</code>. Useful for breaking the file writing process up to prevent hanging.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		writeHeader: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">output</span>) </span>{
+			<span class="hljs-keyword">this</span>.header.tracks = <span class="hljs-keyword">this</span>.tracks.length;
+			<span class="hljs-keyword">this</span>.header.write(output);
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-47">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-47">&#182;</a>
+              </div>
+              <h3 id="miditrack-writetrack-output-index-">MIDITrack.writeTrack (output, index)</h3>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-48">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-48">&#182;</a>
+              </div>
+              <p>Only writes the <code>MIDITrack</code> instance at <code>index</code> to MetaView instance
+<code>output</code>. Useful for breaking the file writing process up to prevent hanging.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		writeTrack: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">output, index</span>) </span>{
+			<span class="hljs-keyword">this</span>.tracks[index].write(output);
+		}
+	}
+
+	TinySMF.MIDIHeader = MIDIHeader;
+	TinySMF.MIDITrack = MIDITrack;
+	TinySMF.MIDIMessage = MIDIMessage;
+	TinySMF.MIDIFile = MIDIFile;
+
+	<span class="hljs-keyword">return</span> TinySMF;
+})();</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
