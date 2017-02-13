@@ -100,7 +100,7 @@ Set the track's instrument to acoustic piano.
 		)
 	);
 
-And make it play a middle C note for one quarter note.
+And make it play a middle C note for one whole note.
 
 	// Note on.
 	track.messages.push(
