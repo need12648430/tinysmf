@@ -1,8 +1,9 @@
 // # TinySMF
 // ----------------------------------------------------------------------------
 // TinySMF is a library for reading and writing simple MIDI files. Its only
-// dependency is on [MetaView](#), a similarly tiny convenience library for
-// reading and writing to JavaScript DataViews.
+// dependency is on [MetaView](https://github.com/need12648430/metaview), a
+// similarly tiny convenience library for reading and writing to JavaScript
+// DataViews.
 
 /*
 Copyright (c) 2017 Jahn Johansen
