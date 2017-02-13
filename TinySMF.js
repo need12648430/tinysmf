@@ -267,7 +267,6 @@ var TinySMF = (function () {
 	// [types of messages](http://www.somascape.org/midi/tech/mfile.html) and their
 	// corresponding data bytes.
 	function MIDIMessage (track, time, message) {
-		// Stores an internal reference to the parent track.
 		this.track = track;
 
 		this.time = time || 0;
