@@ -232,35 +232,59 @@ var TinySMF = (function () {
 		}
 	}
 
-	// ## MIDIMessage (track, time, type, subtype, data)
+	// ## MIDIMessage (track, time, message)
 	// --------------------------------------------------------------------------
 	// MIDI message abstraction class.
 	//
-	// `MIDIMessage.track` is the track that contains this event.
+	// `track` is the track that contains this event.
 	//
-	// `MIDIMessage.time` is the time (relative to the previous event) this message
+	// `time` is the time (relative to the previous event) this message
 	// is to be interpreted.
 	//
-	// `MIDIMessage.type` is the message type, one of `TinySMF.META`, `TinySMF.SYSEX`,
+	// `message` is an object describing the MIDI message, of the form:
+	//
+	// 	{
+	// 		type,
+	// 		subtype,
+	// 		channel,
+	// 		data
+	// 	}
+	//
+	// `type` is the message type, one of `TinySMF.META`, `TinySMF.SYSEX`,
 	// `TinySMF.SYSEX_CONT`, or `TinySMF.CHANNEL`.
 	//
-	// `MIDIMessage.subtype` describes the precise type of event, e.g.
-	// `TinySMF.Meta.TrackName` or `TinySMF.Channel.NoteOn`
+	// `subtype` describes the precise type of event, e.g. `TinySMF.Meta.TrackName`
+	// or `TinySMF.Channel.NoteOn`
 	//
-	// `MIDIMessage.data` is an array, its elements vary depending on the needs of
+	// `channel` is only relevant for `TinySMF.CHANNEL` events, it contains the
+	// channel this message applies to. If omitted, 0 is assumed.
+	//
+	// `data` is an array, its elements vary depending on the needs of
 	// the message subtype. For example, `TinySMF.Channel.NoteOn` data contains 2
 	// bytes representing the pitch of the note, and its velocity.
 	//
 	// I'd recommend reading up on the different
 	// [types of messages](http://www.somascape.org/midi/tech/mfile.html) and their
 	// corresponding data bytes.
-	function MIDIMessage (track, time, type, subtype, data) {
+	function MIDIMessage (track, time, message) {
 		// Stores an internal reference to the parent track.
 		this.track = track;
+
 		this.time = time || 0;
-		this.type = type || 0xF0;
-		this.subtype = subtype || 0;
-		this.data = data || [0xF7];
+
+		if (typeof message !== "undefined") {
+			this.type = message.type;
+			this.subtype = message.subtype;
+
+			if (message.type == TinySMF.CHANNEL)
+				this.channel = message.channel || 0;
+
+			this.data = message.data;
+		} else {
+			this.type = TinySMF.SYSEX;
+			this.subtype = 0;
+			this.data = [0x7f];
+		}
 	}
 
 	MIDIMessage.prototype = {

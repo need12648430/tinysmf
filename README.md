@@ -59,10 +59,12 @@ Let's give our track a name.
 
 	var trackName = new TinySMF.MIDIMessage(
 		track,
-		0, // time to trigger event, relative to previous event
-		TinySMF.META,
-		TinySMF.Meta.TrackName,
-		[]
+		0, // immediate
+		{
+			type: TinySMF.META,
+			subtype: TinySMF.Meta.TrackName,
+			data: [] // left blank to fill with writeDataFromASCII
+		}
 	);
 	trackName.writeDataFromASCII("Hello world!");
 	track.messages.push(trackName);
@@ -73,9 +75,12 @@ Set the track's instrument to acoustic piano.
 		new TinySMF.MIDIMessage(
 			track,
 			0,
-			TinySMF.CHANNEL,
-			TinySMF.Channel.ProgramChange,
-			[0] // acoustic piano
+			{
+				type: TinySMF.CHANNEL,
+				subtype: TinySMF.Channel.ProgramChange,
+				channel: 0,
+				data: [0], // 0 = acoustic piano
+			}
 		)
 	);
 
@@ -85,10 +90,13 @@ And make it play a middle C note for one quarter note.
 	track.messages.push(
 		new TinySMF.MIDIMessage(
 			track,
-			0, // first note is immediate
-			TinySMF.CHANNEL,
-			TinySMF.Channel.NoteOn,
-			[48, 64] // middle c, 50% velocity
+			0, // first note is also immediate
+			{
+				type: TinySMF.CHANNEL,
+				subtype: TinySMF.Channel.NoteOn,
+				channel: 0,
+				data: [48, 64] // middle c, 50% velocity
+			}
 		)
 	);
 
@@ -99,9 +107,12 @@ And make it play a middle C note for one quarter note.
 			// ticks = 1 quarter note, so
 			// ticks * 4 = 1 whole note later
 			midi.header.ticks * 4,
-			TinySMF.CHANNEL,
-			TinySMF.Channel.NoteOff,
-			[48, 64]
+			{
+				type: TinySMF.CHANNEL,
+				subtype: TinySMF.Channel.NoteOff,
+				channel: 0,
+				data: [48, 64] // middle c, 50% velocity
+			}
 		)
 	);
 
@@ -111,10 +122,13 @@ MIDI requires us to specify when a track ends:
 	track.messages.push(
 		new TinySMF.MIDIMessage(
 			track,
+			// whole note after note off
 			midi.header.ticks * 4,
-			TinySMF.META,
-			TinySMF.Meta.EndOfTrack,
-			[]
+			{
+				type: TinySMF.META,
+				subtype: TinySMF.Meta.EndOfTrack,
+				data: []
+			}
 		)
 	);
 

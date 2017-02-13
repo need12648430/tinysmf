@@ -569,7 +569,7 @@ for later manipulation, reading, and writing.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
-              <h2 id="midimessage-track-time-type-subtype-data-">MIDIMessage (track, time, type, subtype, data)</h2>
+              <h2 id="midimessage-track-time-message-">MIDIMessage (track, time, message)</h2>
 <hr>
 
             </div>
@@ -584,14 +584,23 @@ for later manipulation, reading, and writing.</p>
                 <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
               <p>MIDI message abstraction class.</p>
-<p><code>MIDIMessage.track</code> is the track that contains this event.</p>
-<p><code>MIDIMessage.time</code> is the time (relative to the previous event) this message
+<p><code>track</code> is the track that contains this event.</p>
+<p><code>time</code> is the time (relative to the previous event) this message
 is to be interpreted.</p>
-<p><code>MIDIMessage.type</code> is the message type, one of <code>TinySMF.META</code>, <code>TinySMF.SYSEX</code>,
+<p><code>message</code> is an object describing the MIDI message, of the form:</p>
+<pre><code>{
+    type,
+    subtype,
+    channel,
+    data
+}
+</code></pre><p><code>type</code> is the message type, one of <code>TinySMF.META</code>, <code>TinySMF.SYSEX</code>,
 <code>TinySMF.SYSEX_CONT</code>, or <code>TinySMF.CHANNEL</code>.</p>
-<p><code>MIDIMessage.subtype</code> describes the precise type of event, e.g.
-<code>TinySMF.Meta.TrackName</code> or <code>TinySMF.Channel.NoteOn</code></p>
-<p><code>MIDIMessage.data</code> is an array, its elements vary depending on the needs of
+<p><code>subtype</code> describes the precise type of event, e.g. <code>TinySMF.Meta.TrackName</code>
+or <code>TinySMF.Channel.NoteOn</code></p>
+<p><code>channel</code> is only relevant for <code>TinySMF.CHANNEL</code> events, it contains the
+channel this message applies to. If omitted, 0 is assumed.</p>
+<p><code>data</code> is an array, its elements vary depending on the needs of
 the message subtype. For example, <code>TinySMF.Channel.NoteOn</code> data contains 2
 bytes representing the pitch of the note, and its velocity.</p>
 <p>I’d recommend reading up on the different
@@ -600,7 +609,7 @@ corresponding data bytes.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">MIDIMessage</span> (<span class="hljs-params">track, time, type, subtype, data</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">MIDIMessage</span> (<span class="hljs-params">track, time, message</span>) </span>{</pre></div></div>
             
         </li>
         
@@ -616,10 +625,22 @@ corresponding data bytes.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>		<span class="hljs-keyword">this</span>.track = track;
+
 		<span class="hljs-keyword">this</span>.time = time || <span class="hljs-number">0</span>;
-		<span class="hljs-keyword">this</span>.type = type || <span class="hljs-number">0xF0</span>;
-		<span class="hljs-keyword">this</span>.subtype = subtype || <span class="hljs-number">0</span>;
-		<span class="hljs-keyword">this</span>.data = data || [<span class="hljs-number">0xF7</span>];
+
+		<span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> message !== <span class="hljs-string">"undefined"</span>) {
+			<span class="hljs-keyword">this</span>.type = message.type;
+			<span class="hljs-keyword">this</span>.subtype = message.subtype;
+
+			<span class="hljs-keyword">if</span> (message.type == TinySMF.CHANNEL)
+				<span class="hljs-keyword">this</span>.channel = message.channel || <span class="hljs-number">0</span>;
+
+			<span class="hljs-keyword">this</span>.data = message.data;
+		} <span class="hljs-keyword">else</span> {
+			<span class="hljs-keyword">this</span>.type = TinySMF.SYSEX;
+			<span class="hljs-keyword">this</span>.subtype = <span class="hljs-number">0</span>;
+			<span class="hljs-keyword">this</span>.data = [<span class="hljs-number">0x7f</span>];
+		}
 	}
 
 	MIDIMessage.prototype = {</pre></div></div>
