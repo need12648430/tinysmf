@@ -34,7 +34,22 @@ If you'd like to present the user with the MIDI file for downloading, you can ge
 	var downloadLink = output.toDataURI("audio/midi");
 
 ### Processing a MIDI file
+For example, to transpose all notes up by 1 semitone:
 
+	var midi; // MIDIFile instance
+	for (var t = 0; t < midi.tracks.length; t ++) {
+		var track = midi.tracks[t];
+
+		for (var m = 0; m < track.messages.length; m ++) {
+			var message = midi.messages[m];
+
+			if (message.subtype != TinySMF.Channel.NoteOn ||
+					message.subtype != TinySMF.Channel.NoteOff)
+					continue;
+
+			message.data[0] ++;
+		}
+	}
 
 ### Generate a MIDI file
 Create a `TinySMF.MIDIFile` instance.
