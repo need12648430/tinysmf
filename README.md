@@ -43,7 +43,7 @@ For example, to transpose all notes up by 1 semitone:
 		for (var m = 0; m < track.messages.length; m ++) {
 			var message = track.messages[m];
 
-			if (message.subtype != TinySMF.Channel.NoteOn ||
+			if (message.subtype != TinySMF.Channel.NoteOn &&
 					message.subtype != TinySMF.Channel.NoteOff)
 					continue;
 
