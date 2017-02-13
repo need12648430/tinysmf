@@ -80,7 +80,7 @@ Set the track's instrument to acoustic piano.
 			0,
 			TinySMF.CHANNEL,
 			TinySMF.Channel.ProgramChange,
-			[1]
+			[0] // acoustic piano
 		)
 	);
 
@@ -90,10 +90,10 @@ And make it play a middle C note for one quarter note.
 	track.messages.push(
 		new TinySMF.MIDIMessage(
 			track,
-			0,
+			0, // first note is immediate
 			TinySMF.CHANNEL,
 			TinySMF.Channel.NoteOn,
-			[48, 127]
+			[48, 64] // middle c, 50% velocity
 		)
 	);
 
@@ -101,10 +101,25 @@ And make it play a middle C note for one quarter note.
 	track.messages.push(
 		new TinySMF.MIDIMessage(
 			track,
-			midi.ticks, // one quarter note later
+			// ticks = 1 quarter note, so
+			// ticks * 4 = 1 whole note later
+			midi.header.ticks * 4,
 			TinySMF.CHANNEL,
-			TinySMF.Channel.NoteOn,
-			[48, 127]
+			TinySMF.Channel.NoteOff,
+			[48, 64]
+		)
+	);
+
+MIDI requires us to specify when a track ends:
+
+	// End of tack.
+	track.messages.push(
+		new TinySMF.MIDIMessage(
+			track,
+			midi.header.ticks * 4,
+			TinySMF.META,
+			TinySMF.Meta.EndOfTrack,
+			[]
 		)
 	);
 
