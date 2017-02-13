@@ -1,12 +1,9 @@
 # TinySMF
 
 TinySMF is a tiny JavaScript library for working with MIDI files right in the browser.
-It's just 6.6 kB minified, with one similarly tiny dependency on
-[MetaView](http://www.github.com/need12648430/metaview) at 4.1 kB.
+It's just 6.6 kB minified, with one similarly tiny dependency on [MetaView](http://www.github.com/need12648430/metaview) at 4.1 kB.
 
-In addition to the following examples, the source code is clean and documented
-with [Docco](https://jashkenas.github.io/docco/). It can be found
-[here](https://need12648430.github.io/tinysmf/docs).
+In addition to the following examples, the source code is clean and documented with [Docco](https://jashkenas.github.io/docco/). It can be found [here](https://need12648430.github.io/tinysmf/docs).
 
 ## Examples
 ### Reading a MIDI file
@@ -16,30 +13,28 @@ First, you open the `ArrayBuffer` for management with `MetaView`. Note: MIDI fil
 	var input = new MetaView(midiFileInArrayBuffer);
 	input.endianness = MetaView.BE;
 
-Then you feed the MetaView instance to the `read` method of a `TinySMF.MIDIFile`
-instance, like so:
+Then you feed the MetaView instance to the `read` method of a `TinySMF.MIDIFile` instance, like so:
 
 	var midi = new TinySMF.MIDIFile();
 	midi.read(input);
 
 ### Writing a MIDI file
-The process looks very similar to reading. Create a `MetaView` instance, and
-`write` the `TinySMF.MIDIFile` to it.
+The process looks very similar to reading. Create a `MetaView` instance, and `write` the `TinySMF.MIDIFile` to it.
 
 	var output = new MetaView();
 	output.endianness = MetaView.BE;
 	midi.write(output);
 
-At this point, there may be some blank data at the end of `MetaView`'s
-automatically expanding array buffer. It won't hurt anything, but you can trim
-it off with:
+At this point, there may be some blank data at the end of `MetaView`'s automatically expanding array buffer. It won't hurt anything, but you can trim it off with:
 
 	output.finalize();
 
-If you'd like to present the user with the MIDI file for downloading, you can
-generate a data URI link with `MetaView.toDataURI`, like so:
+If you'd like to present the user with the MIDI file for downloading, you can generate a data URI link with `MetaView.toDataURI`, like so:
 
 	var downloadLink = output.toDataURI("audio/midi");
+
+### Processing a MIDI file
+
 
 ### Generate a MIDI file
 Create a `TinySMF.MIDIFile` instance.
